@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "gestion_usuarios.apps.GestionUsuariosConfig",
     "gestion_productos.apps.GestionProductosConfig",
     "autentificacion.apps.AutentificacionConfig",
+    "rest_framework_simplejwt.token_blacklist",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -189,5 +191,164 @@ SWAGGER_SETTINGS = {
                 'Ejemplo: "Bearer {token}"'
             ),
         }
+    },
+}
+# ─────────────────────────────────────────
+# CORS
+# ─────────────────────────────────────────
+# Orígenes permitidos (ajusta según tu frontend)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:4200",
+    "http://127.0.0.1:3000",
+]
+
+# Permite enviar cookies y encabezados de autorización
+CORS_ALLOW_CREDENTIALS = True
+
+# Métodos HTTP que acepta la API desde el frontend
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+# Encabezados que el frontend puede enviar
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",  # ← necesario para enviar el JWT
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+# ─────────────────────────────────────────
+# LOGGING — Logs técnicos
+# ─────────────────────────────────────────
+import os
+
+LOGS_DIR = BASE_DIR / "logs"
+os.makedirs(LOGS_DIR, exist_ok=True)  # crea la carpeta si no existe
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,  # conserva los loggers internos de Django
+    # ── Formatos ──────────────────────────────────────────────────────────────
+    "formatters": {
+        # Formato detallado para archivos
+        "tecnico_detallado": {
+            "format": "[{asctime}] [{levelname}] [{name}] [{module}:{lineno}] {message}",
+            "style": "{",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        # Formato corto para consola
+        "consola_simple": {
+            "format": "[{levelname}] {name}: {message}",
+            "style": "{",
+        },
+        # se agrega para logs de auditoria. #NUEVO
+        "auditoria_formato": {
+            "format": "[{asctime}] [AUDITORIA] [Usuario: {message}]",
+            "style": "{",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    # filtros
+    "filters": {
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",  # solo activo con DEBUG=True
+        },
+    },
+    # ── Handlers
+    "handlers": {
+        # Consola — solo en desarrollo
+        "consola": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "consola_simple",
+            "filters": ["require_debug_true"],
+        },
+        # Archivo rotativo para errores técnicos
+        "archivo_tecnico": {
+            "level": "WARNING",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGS_DIR / "tecnico.log",
+            "maxBytes": 1024 * 1024 * 5,  # 5 MB por archivo
+            "backupCount": 5,  # conserva hasta 5 archivos históricos
+            "formatter": "tecnico_detallado",
+            "encoding": "utf-8",
+        },
+        # Archivo rotativo para mensajes DEBUG e INFO
+        "archivo_debug": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGS_DIR / "debug.log",
+            "maxBytes": 1024 * 1024 * 5,
+            "backupCount": 3,
+            "formatter": "tecnico_detallado",
+            "encoding": "utf-8",
+        },
+        # Handler específico para logs de auditoría #NUEVO
+        "archivo_auditoria": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGS_DIR / "auditoria.log",
+            "maxBytes": 1024 * 1024 * 10,  # 10 MB por archivo
+            "backupCount": 10,  # conserva hasta 10 archivos históricos
+            "formatter": "auditoria_formato",
+            "encoding": "utf-8",
+        },
+    },
+    # ── Loggers ───────────────────────────────────────────────────────────────
+    "loggers": {
+        # Logger raíz de Django (errores internos del framework)
+        "django": {
+            "handlers": ["consola", "archivo_tecnico"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        # Peticiones HTTP (cada request que llega al servidor)
+        "django.request": {
+            "handlers": ["archivo_tecnico"],
+            "level": "WARNING",  # registra 4xx y 5xx automáticamente
+            "propagate": False,
+        },
+        # Consultas a la base de datos
+        "django.db.backends": {
+            "handlers": ["archivo_debug"],
+            "level": "DEBUG",
+            "propagate": False,
+            "filters": ["require_debug_true"],  # solo en desarrollo
+        },
+        # Logger propio de la aplicación — usado en las views
+        "back_end_django": {
+            "handlers": ["consola", "archivo_tecnico", "archivo_debug"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        # Logger de gestion_usuarios
+        "gestion_usuarios": {
+            "handlers": ["consola", "archivo_tecnico", "archivo_debug"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        # Logger de gestion_productos
+        "gestion_productos": {
+            "handlers": ["consola", "archivo_tecnico", "archivo_debug"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        # Logger de auditoría #NUEVO
+        "auditoria": {
+            "handlers": ["archivo_auditoria", "consola"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }

@@ -24,7 +24,7 @@ from drf_yasg import openapi
 schema_view = get_schema_view(
     openapi.Info(
         title="APIrest",
-        default_version="v3",
+        default_version="v4",
         description="Documentacion de la API",
         terms_of_service="https://example.com",
         contact=openapi.Contact(email="soporte@example.com"),
@@ -36,9 +36,9 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/usuarios/", include("gestion_usuarios.urls")),
-    path("api/productos/", include("gestion_productos.urls")),
-    path("api/auth/", include("autentificacion.urls")),
+    path("api/", include("gestion_usuarios.urls")),
+    path("api/", include("gestion_productos.urls")),
+    path("api/", include("autentificacion.urls")),
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",
         schema_view.without_ui(cache_timeout=0),

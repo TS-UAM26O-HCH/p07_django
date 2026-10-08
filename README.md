@@ -16,17 +16,19 @@ pip install .
 uv sync
 ```
 
-Levantar PostgreSQL
+Levantar Servicios
 
 ```bash
-docker composer up -d
+cd proyecto_django/back_end_django
+docker compose build
+docker compose up -d
 docker ps
 ```
 
 Conectarse a la Base de Datos
 
 ```bash
-cd proyecto_django/back_end_django && ./pgres.bash
+ ./pgres.bash
 ```
 
 Listar las tablas dentro de la Base de Datos
@@ -38,22 +40,18 @@ Listar las tablas dentro de la Base de Datos
 Preparar el entorno con la Base de Datos
 
 ```bash
-python3 manage.py makemigrations gestion_usuarios
-python3 manage.py makemigrations gestion_productos
 python3 manage.py migrate
 python3 manage.py check
 python3 manage.py initadmin
-python3 manage.py runserver
+# python3 manage.py runserver # No es necesario pues se levanta el servidor con Docker
 ```
 
 ```bash
 # uv
-uv run manage.py makemigrations gestion_usuarios
-uv run manage.py makemigrations gestion_productos
 uv run manage.py migrate
 uv run manage.py check
 uv run manage.py initadmin
-uv run manage.py runserver
+# uv run manage.py runserver # No es necesario pues se levanta el servidor con Docker
 ```
 
 Visualizacion de la API
@@ -75,3 +73,11 @@ AdminApiDjango123
 Copiar el Access Token sin comillas y dentro de el boton `Authorize` de Swagger ingresar:
 
 `Bearer` seguida del access token dejando un espacio
+
+Para realizar los tests probablemente sea necesario reclamar la propiedad de los logs
+
+```bash
+sudo chown -R $USER:$USER {Path del proyecto}/back_end_django/logs
+
+chmod -R u+rwX {Path del proyecto}/back_end_django/logs
+```
