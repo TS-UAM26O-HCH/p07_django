@@ -44,6 +44,7 @@ python3 manage.py migrate
 python3 manage.py check
 python3 manage.py initadmin
 # python3 manage.py runserver # No es necesario pues se levanta el servidor con Docker
+python3 manage.py test
 ```
 
 ```bash
@@ -52,6 +53,7 @@ uv run manage.py migrate
 uv run manage.py check
 uv run manage.py initadmin
 # uv run manage.py runserver # No es necesario pues se levanta el servidor con Docker
+uv run manage.py test
 ```
 
 Visualizacion de la API
